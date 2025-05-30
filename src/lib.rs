@@ -181,6 +181,20 @@ impl Labels {
     pub fn get(&self, name: &str) -> Option<&str> {
         self.0.get(name).map(|x| x.as_str())
     }
+
+    pub fn to_json(&self) -> String {
+        if self.0.is_empty() {
+            return "{}".to_string();
+        }
+        format!(
+            "{{{}}}",
+            self.0
+                .iter()
+                .map(|(k, v)| format!(r#""{}":"{}""#, k, v))
+                .collect::<Vec<_>>()
+                .join(",")
+        )
+    }
 }
 
 impl Deref for Labels {
