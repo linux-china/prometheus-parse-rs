@@ -10,7 +10,7 @@ use std::ops::Deref;
 static HELP_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"^#\s+HELP\s+(\w+)\s+(.+)$").unwrap());
 static TYPE_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"^#\s+TYPE\s+(\w+)\s+(\w+)").unwrap());
 static SAMPLE_RE: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"^(?P<name>\w+)(\{(?P<labels>[^}]+)\})?\s+(?P<value>\S+)(\s+(?P<timestamp>\S+))?")
+    Regex::new(r"^(?P<name>\w+)(\{(?P<labels>[^}]+)})?\s+(?P<value>\S+)(\s+(?P<timestamp>\S+))?")
         .unwrap()
 });
 
@@ -92,7 +92,7 @@ impl<'a> LineInfo<'a> {
         }
         match SAMPLE_RE.captures(line) {
             Some(ref caps) => {
-                return match (
+                match (
                     caps.name("name"),
                     caps.name("labels"),
                     caps.name("value"),
@@ -105,7 +105,7 @@ impl<'a> LineInfo<'a> {
                         timestamp: timestamp.map(|c| c.as_str()),
                     },
                     _ => LineInfo::Ignored,
-                };
+                }
             }
             None => LineInfo::Ignored,
         }
@@ -125,11 +125,11 @@ fn parse_bucket(s: &str, label: &str) -> Option<(Labels, f64)> {
 
     let mut value = None;
     for kv in s.split(',') {
-        let kvpair = kv.split('=').collect::<Vec<_>>();
-        if kvpair.len() != 2 || kvpair[0].is_empty() {
+        let kv_pair = kv.split('=').collect::<Vec<_>>();
+        if kv_pair.len() != 2 || kv_pair[0].is_empty() {
             continue;
         }
-        let (k, v) = (kvpair[0], kvpair[1].trim_matches('"'));
+        let (k, v) = (kv_pair[0], kv_pair[1].trim_matches('"'));
         if k == label {
             value = match parse_golang_float(v) {
                 Ok(v) => Some(v),
@@ -166,13 +166,13 @@ impl Labels {
     fn parse(s: &str) -> Labels {
         let mut l = HashMap::new();
         for kv in s.split(',') {
-            let kvpair = kv.split('=').collect::<Vec<_>>();
-            if kvpair.len() != 2 || kvpair[0].is_empty() {
+            let kv_pair = kv.split('=').collect::<Vec<_>>();
+            if kv_pair.len() != 2 || kv_pair[0].is_empty() {
                 continue;
             }
             l.insert(
-                kvpair[0].to_string(),
-                kvpair[1].trim_matches('"').to_string(),
+                kv_pair[0].to_string(),
+                kv_pair[1].trim_matches('"').to_string(),
             );
         }
         Labels(l)
@@ -239,8 +239,8 @@ pub struct Scrape {
 
 fn parse_golang_float(s: &str) -> Result<f64, <f64 as std::str::FromStr>::Err> {
     match s.to_lowercase().as_str() {
-        "nan" => Ok(std::f64::NAN), // f64::parse doesn't recognize 'nan'
-        s => s.parse::<f64>(),      // f64::parse expects lowercase [+-]inf
+        "nan" => Ok(f64::NAN), // f64::parse doesn't recognize 'nan'
+        s => s.parse::<f64>(), // f64::parse expects lowercase [+-]inf
     }
 }
 
@@ -481,9 +481,9 @@ mod tests {
         assert_eq!(parse_golang_float("1.0"), Ok(1.0f64));
         assert_eq!(parse_golang_float("-1.0"), Ok(-1.0f64));
         assert!(parse_golang_float("NaN").unwrap().is_nan());
-        assert_eq!(parse_golang_float("Inf"), Ok(std::f64::INFINITY));
-        assert_eq!(parse_golang_float("+Inf"), Ok(std::f64::INFINITY));
-        assert_eq!(parse_golang_float("-Inf"), Ok(std::f64::NEG_INFINITY));
+        assert_eq!(parse_golang_float("Inf"), Ok(f64::INFINITY));
+        assert_eq!(parse_golang_float("+Inf"), Ok(f64::INFINITY));
+        assert_eq!(parse_golang_float("-Inf"), Ok(f64::NEG_INFINITY));
     }
 
     #[test]
@@ -492,7 +492,7 @@ mod tests {
 # HELP http_requests_total The total number of HTTP requests.
 # TYPE http_requests_total counter
 http_requests_total{method="post",code="200"} 1027 1395066363000
-http_requests_total{method="post",code="400"}    3 1395066363000
+http_requests_total{method="post",code="400"} 3 1395066363000
 
 # Escaping in label values:
 msdos_file_access_time_seconds{path="C:\\DIR\\FILE.TXT",error="Cannot find file:\n\"FILE.TXT\""} 1.458255915e9
